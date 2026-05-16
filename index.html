@@ -1,486 +1,278 @@
+html
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GasOn B2B App Demo</title>
-    <!-- Tailwind CSS -->
+    <title>缓冲液反应动画演示</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
     <style>
-        /* Custom animations */
-        @keyframes progress {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-        .animate-progress {
-          animation: progress 2s infinite linear;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 0px;
-          background: transparent;
-        }
-        @keyframes drive-in {
-          0% { transform: translate(100px, 100px); opacity: 0; }
-          100% { transform: translate(0, 0); opacity: 1; }
-        }
-        .animate-drive-in {
-          animation: drive-in 1s ease-out forwards;
-        }
-        /* Hide scrollbar for Chrome, Safari and Opera */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        /* Hide scrollbar for IE, Edge and Firefox */
-        .no-scrollbar {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        canvas { background-color: #f0fdf4; border-radius: 0 0 1rem 1rem; }
     </style>
 </head>
-<body class="bg-gray-200 flex items-center justify-center min-h-screen p-4">
-    <div id="root"></div>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden border border-gray-200">
+        <!-- 顶部控制栏 -->
+        <div class="bg-gray-50 p-6 border-b border-gray-200">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">酸性缓冲液工作原理 (Acidic Buffer)</h2>
+            <p class="text-sm text-gray-600 mb-4">观察加入酸 (H⁺) 或碱 (OH⁻) 时，缓冲液内部粒子如何互相反应以维持平衡。</p>
+            
+            <div class="flex flex-wrap gap-3">
+                <button id="btnAddAcid" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow transition active:scale-95 flex items-center">
+                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    添加酸 (H⁺/H₃O⁺)
+                </button>
+                <button id="btnAddBase" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow transition active:scale-95 flex items-center">
+                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    添加碱 (OH⁻)
+                </button>
+                <button id="btnReset" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg shadow transition active:scale-95 ml-auto">
+                    重置缓冲液
+                </button>
+            </div>
+        </div>
 
-        // --- Icon Components (Recreating Lucide Icons as SVG components for standalone HTML) ---
-        const IconBase = ({ children, size = 24, className = "", ...props }) => (
-            <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width={size} 
-                height={size} 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                className={className} 
-                {...props}
-            >
-                {children}
-            </svg>
-        );
+        <!-- 图例解释 -->
+        <div class="flex flex-wrap justify-center gap-6 p-4 text-sm font-medium border-b border-gray-100">
+            <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-blue-500 mr-2 border border-blue-700"></span>弱酸 (CH₃COOH)</div>
+            <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-green-500 mr-2 border border-green-700"></span>共轭碱 (CH₃COO⁻)</div>
+            <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-red-500 mr-2 border border-red-700"></span>外加酸 (H⁺)</div>
+            <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-purple-500 mr-2 border border-purple-700"></span>外加碱 (OH⁻)</div>
+        </div>
 
-        const Truck = (props) => <IconBase {...props}><path d="M5 18H3c-.6 0-1-.4-1-1V7c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v11"/><path d="M14 9h4l4 4v4c0 .6-.4 1-1 1h-2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></IconBase>;
-        const MapPin = (props) => <IconBase {...props}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></IconBase>;
-        const Droplet = (props) => <IconBase {...props}><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></IconBase>;
-        const ShieldCheck = (props) => <IconBase {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></IconBase>;
-        const Clock = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconBase>;
-        const ChevronRight = (props) => <IconBase {...props}><path d="m9 18 6-6-6-6"/></IconBase>;
-        const Navigation = (props) => <IconBase {...props}><polygon points="3 11 22 2 13 21 11 13 3 11"/></IconBase>;
-        const CheckCircle2 = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></IconBase>;
-        const AlertTriangle = (props) => <IconBase {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></IconBase>;
-        const FileText = (props) => <IconBase {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></IconBase>;
-        const User = (props) => <IconBase {...props}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></IconBase>;
-        const X = (props) => <IconBase {...props}><path d="M18 6 6 18"/><path d="m6 6 18 18"/></IconBase>;
-        const Circle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/></IconBase>;
+        <!-- 动画区域 -->
+        <div class="relative w-full aspect-video flex justify-center bg-gray-50 p-6">
+            <!-- 烧杯外观容器 -->
+            <div class="relative w-full max-w-md h-full rounded-b-2xl border-4 border-t-0 border-gray-300 shadow-inner flex items-end justify-center bg-white">
+                <!-- 液体背景 -->
+                <div class="absolute bottom-0 w-full h-[85%] bg-blue-50/50 rounded-b-xl border-t border-blue-100"></div>
+                <!-- 粒子画板 -->
+                <canvas id="bufferCanvas" class="absolute inset-0 w-full h-full"></canvas>
+            </div>
+            
+            <!-- 状态提示框 -->
+            <div id="statusOverlay" class="absolute top-8 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-bold opacity-0 transition-opacity duration-300 pointer-events-none">
+                反应发生！
+            </div>
+        </div>
 
+        <!-- 数据统计 -->
+        <div class="bg-gray-100 p-4 flex justify-around text-center border-t border-gray-200">
+            <div>
+                <div class="text-xs text-gray-500 uppercase font-bold">弱酸 (CH₃COOH)</div>
+                <div id="countAcid" class="text-2xl font-black text-blue-600">10</div>
+            </div>
+            <div>
+                <div class="text-xs text-gray-500 uppercase font-bold">共轭碱 (CH₃COO⁻)</div>
+                <div id="countBase" class="text-2xl font-black text-green-600">10</div>
+            </div>
+        </div>
+    </div>
 
-        // --- Main App Component ---
-        function GasOnApp() {
-            const [screen, setScreen] = useState('dashboard'); // dashboard, order, safety, tracking, success
-            const [selectedTrucks, setSelectedTrucks] = useState([]);
-            const [safetyStep, setSafetyStep] = useState(0);
-            const [loading, setLoading] = useState(false);
+    <script>
+        const canvas = document.getElementById('bufferCanvas');
+        const ctx = canvas.getContext('2d');
+        const countAcidEl = document.getElementById('countAcid');
+        const countBaseEl = document.getElementById('countBase');
+        const statusOverlay = document.getElementById('statusOverlay');
 
-            // Mock Data: JB Fleet
-            const fleetData = [
-                { id: 'JHU8821', type: 'Scania Heavy', fuel: 15, capacity: 300, location: 'Kempas Depot', status: 'Low' },
-                { id: 'JQS1029', type: 'Volvo FMX', fuel: 45, capacity: 300, location: 'Kempas Depot', status: 'Good' },
-                { id: 'JWA3312', type: 'Isuzu Giga', fuel: 10, capacity: 200, location: 'Pasir Gudang', status: 'Critical' },
-            ];
+        // 设置画板尺寸
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-            const FUEL_PRICE = 1.00; // Updated Price
+        let particles = [];
+        let floatTexts = []; // 用于显示 "+ H2O"
 
-            // Toggle Truck Selection
-            const toggleTruck = (id) => {
-                if (selectedTrucks.includes(id)) {
-                setSelectedTrucks(selectedTrucks.filter(t => t !== id));
-                } else {
-                setSelectedTrucks([...selectedTrucks, id]);
-                }
-            };
+        const TYPES = {
+            WEAK_ACID: { color: '#3b82f6', borderColor: '#1d4ed8', label: 'CH3COOH', radius: 18 }, // 蓝
+            CONJ_BASE: { color: '#10b981', borderColor: '#047857', label: 'CH3COO⁻', radius: 18 }, // 绿
+            ADDED_ACID: { color: '#ef4444', borderColor: '#b91c1c', label: 'H⁺', radius: 12 },   // 红
+            ADDED_BASE: { color: '#a855f7', borderColor: '#7e22ce', label: 'OH⁻', radius: 12 }    // 紫
+        };
 
-            // Safety Check Simulation Logic
-            useEffect(() => {
-                if (screen === 'safety') {
-                const timer1 = setTimeout(() => setSafetyStep(1), 1000);
-                const timer2 = setTimeout(() => setSafetyStep(2), 2500);
-                const timer3 = setTimeout(() => setSafetyStep(3), 4000);
-                const timer4 = setTimeout(() => {
-                    setLoading(false);
-                }, 5000); 
-                return () => {
-                    clearTimeout(timer1);
-                    clearTimeout(timer2);
-                    clearTimeout(timer3);
-                    clearTimeout(timer4);
-                };
-                } else {
-                setSafetyStep(0); // Reset when leaving screen
-                }
-            }, [screen]);
+        class Particle {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = (Math.random() - 0.5) * 1.5;
+                this.target = null;
+                this.markedForDeletion = false;
+            }
 
-            // Colors
-            const colors = {
-                primary: 'bg-teal-600',
-                primaryDark: 'bg-slate-900',
-                accent: 'text-teal-600',
-                bg: 'bg-slate-50',
-            };
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.type.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.type.color;
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = this.type.borderColor;
+                ctx.stroke();
 
-            // --- Screens ---
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                // 简单处理下标
+                let label = this.type.label;
+                if(label === 'CH3COOH') label = 'HA';
+                if(label === 'CH3COO⁻') label = 'A⁻';
+                ctx.fillText(label, this.x, this.y);
+            }
 
-            // 1. Dashboard
-            const Dashboard = () => (
-                <div className="space-y-6 pb-20">
-                {/* Header */}
-                <div className={`${colors.primaryDark} p-6 rounded-b-3xl shadow-lg text-white`}>
-                    <div className="flex justify-between items-center mb-6">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                        GasOn <Droplet className="w-5 h-5 text-teal-400 fill-teal-400" />
-                        </h1>
-                        <p className="text-slate-400 text-sm">Johor Bahru Logistics Hub</p>
-                    </div>
-                    <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center">
-                        <User size={20} />
-                    </div>
-                    </div>
-                    
-                    <div className="flex justify-between gap-4">
-                    <div className="bg-slate-800/50 p-4 rounded-xl flex-1 border border-slate-700">
-                        <p className="text-xs text-slate-400 mb-1">Man-hours Saved</p>
-                        <p className="text-2xl font-mono font-bold text-teal-400">124h</p>
-                    </div>
-                    <div className="bg-slate-800/50 p-4 rounded-xl flex-1 border border-slate-700">
-                        <p className="text-xs text-slate-400 mb-1">Est. Fuel Cost</p>
-                        <p className="text-2xl font-mono font-bold">RM {FUEL_PRICE.toFixed(2)}<span className="text-sm text-slate-500">/L</span></p>
-                    </div>
-                    </div>
-                </div>
-
-                {/* Fleet List */}
-                <div className="px-6">
-                    <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold text-slate-800">Fleet Status (Live)</h2>
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full flex items-center gap-1">
-                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Online
-                    </span>
-                    </div>
-
-                    <div className="space-y-3">
-                    {fleetData.map((truck) => (
-                        <div 
-                        key={truck.id}
-                        onClick={() => toggleTruck(truck.id)}
-                        className={`p-4 rounded-xl border-2 transition-all cursor-pointer relative overflow-hidden ${
-                            selectedTrucks.includes(truck.id) 
-                            ? 'border-teal-500 bg-teal-50 shadow-md' 
-                            : 'border-white bg-white shadow-sm'
-                        }`}
-                        >
-                        <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${truck.fuel < 20 ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}`}>
-                                <Truck size={24} />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-slate-800">{truck.id}</h3>
-                                <p className="text-xs text-slate-500">{truck.type} • {truck.location}</p>
-                            </div>
-                            </div>
-                            <div className="text-right">
-                            <p className={`font-bold ${truck.fuel < 20 ? 'text-red-500' : 'text-slate-700'}`}>
-                                {truck.fuel}%
-                            </p>
-                            <p className="text-xs text-slate-400">{Math.round(truck.capacity * (truck.fuel/100))}L</p>
-                            </div>
-                        </div>
-                        
-                        {/* Progress Bar */}
-                        <div className="mt-3 w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                            <div 
-                            className={`h-full rounded-full ${truck.fuel < 20 ? 'bg-red-500' : 'bg-teal-500'}`} 
-                            style={{width: `${truck.fuel}%`}}
-                            ></div>
-                        </div>
-
-                        {selectedTrucks.includes(truck.id) && (
-                            <div className="absolute top-2 right-2 text-teal-600">
-                            <CheckCircle2 size={20} className="text-teal-600" />
-                            </div>
-                        )}
-                        </div>
-                    ))}
-                    </div>
-                </div>
-
-                {/* Floating Action Button */}
-                {selectedTrucks.length > 0 && (
-                    <div className="absolute bottom-0 left-0 w-full p-4 bg-white/80 backdrop-blur-md border-t border-slate-200 z-50 rounded-b-[40px]">
-                    <button 
-                        onClick={() => setScreen('order')}
-                        className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-teal-200 flex items-center justify-center gap-2 transition-transform active:scale-95"
-                    >
-                        Request Refuel ({selectedTrucks.length}) <ChevronRight />
-                    </button>
-                    </div>
-                )}
-                </div>
-            );
-
-            // 2. Order Summary
-            const OrderSummary = () => {
-                const totalVolume = selectedTrucks.reduce((acc, id) => {
-                const t = fleetData.find(x => x.id === id);
-                return acc + (t.capacity - (t.capacity * (t.fuel/100)));
-                }, 0);
-
-                return (
-                <div className="p-6 h-full flex flex-col bg-slate-50">
-                    <div className="flex items-center gap-4 mb-8">
-                    <button onClick={() => setScreen('dashboard')} className="p-2 bg-white rounded-full shadow-sm text-slate-600 hover:bg-slate-100">
-                        <X size={20} />
-                    </button>
-                    <h2 className="text-xl font-bold text-slate-800">Confirm Order</h2>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4 mb-6">
-                    <div className="flex justify-between border-b border-slate-100 pb-4">
-                        <span className="text-slate-500">Service Type</span>
-                        <span className="font-bold text-slate-800 flex items-center gap-1">
-                        <Clock size={16} className="text-teal-500" /> On-Demand
-                        </span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-100 pb-4">
-                        <span className="text-slate-500">Fuel Type</span>
-                        <span className="font-bold text-slate-800">Euro 5 Diesel</span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-100 pb-4">
-                        <span className="text-slate-500">Est. Volume</span>
-                        <span className="font-bold text-teal-600">~{Math.round(totalVolume)} Liters</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-slate-500">Est. Cost</span>
-                        <span className="font-bold text-slate-800">RM {(totalVolume * FUEL_PRICE).toFixed(2)}</span>
-                    </div>
-                    </div>
-
-                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex gap-3 items-start mb-auto">
-                    <AlertTriangle className="text-amber-500 shrink-0" size={24} />
-                    <div>
-                        <h4 className="font-bold text-amber-800 text-sm">Safety Verification Required</h4>
-                        <p className="text-xs text-amber-700 mt-1">Per BOMBA regulations, SafeTank protocol will initiate upon arrival. Please ensure engines are off.</p>
-                    </div>
-                    </div>
-
-                    <button 
-                    onClick={() => { setLoading(true); setScreen('safety'); }}
-                    className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-xl flex items-center justify-center gap-2 transition-transform active:scale-95"
-                    >
-                    <ShieldCheck className="text-teal-400" />
-                    Initiate Safety Check
-                    </button>
-                </div>
-                );
-            };
-
-            // 3. SafeTank Safety Check (Updated: Simple & Clear Style)
-            const SafetyCheck = () => (
-                <div className="h-full bg-white flex flex-col p-6">
+            update() {
+                // 边界碰撞反弹 (限制在液体区域，大约下方的 85%)
+                const liquidTop = canvas.height * 0.15;
                 
-                {/* Header */}
-                <div className="mb-8 text-center mt-8">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">SafeTank™ Protocol</h2>
-                    <p className="text-slate-500 text-sm">Mandatory Pre-Refuel Validation</p>
-                </div>
+                if (this.x - this.type.radius < 0) { this.x = this.type.radius; this.vx *= -1; }
+                if (this.x + this.type.radius > canvas.width) { this.x = canvas.width - this.type.radius; this.vx *= -1; }
+                if (this.y - this.type.radius < liquidTop && !this.target) { this.y = liquidTop + this.type.radius; this.vy *= -1; }
+                if (this.y + this.type.radius > canvas.height) { this.y = canvas.height - this.type.radius; this.vy *= -1; }
 
-                {/* Main Status Indicator */}
-                <div className="flex justify-center mb-10">
-                    <div className={`w-32 h-32 rounded-full border-4 flex flex-col items-center justify-center transition-all duration-500 ${
-                    safetyStep >= 3 ? 'border-teal-500 bg-teal-50' : 'border-slate-200 bg-white'
-                    }`}>
-                    {safetyStep >= 3 ? (
-                        <CheckCircle2 size={48} className="text-teal-600 mb-2" />
-                    ) : (
-                        <div className="w-12 h-12 border-4 border-slate-200 border-t-teal-600 rounded-full animate-spin mb-2"></div>
-                    )}
-                    <span className={`text-xs font-bold ${safetyStep >= 3 ? 'text-teal-700' : 'text-slate-400'}`}>
-                        {safetyStep >= 3 ? 'PASSED' : 'CHECKING'}
-                    </span>
-                    </div>
-                </div>
-
-                {/* Checklist - Clean & Flat */}
-                <div className="space-y-4 flex-1">
-                    <SafetyItemSimple 
-                    label="DOSH Permit Verification" 
-                    active={true} 
-                    done={safetyStep >= 1} 
-                    />
-                    <SafetyItemSimple 
-                    label="Static Grounding Connected" 
-                    active={safetyStep >= 1} 
-                    done={safetyStep >= 2} 
-                    />
-                    <SafetyItemSimple 
-                    label="Auto-Shutoff Valve Test" 
-                    active={safetyStep >= 2} 
-                    done={safetyStep >= 3} 
-                    />
-                </div>
-
-                {/* Footer Button */}
-                <div className="mt-8">
-                    <button 
-                    onClick={() => setScreen('tracking')}
-                    disabled={safetyStep < 3}
-                    className={`w-full font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all ${
-                        safetyStep >= 3 
-                        ? 'bg-teal-600 text-white shadow-lg hover:bg-teal-700 cursor-pointer' 
-                        : 'bg-slate-100 text-slate-300 cursor-not-allowed'
-                    }`}
-                    >
-                    {safetyStep >= 3 ? 'Dispatch Truck' : 'Processing...'}
-                    {safetyStep >= 3 && <ChevronRight size={20} />}
-                    </button>
-                </div>
-                </div>
-            );
-
-            const SafetyItemSimple = ({ label, active, done }) => (
-                <div className={`flex items-center justify-between p-4 rounded-lg border transition-all duration-300 ${
-                done 
-                    ? 'border-teal-500 bg-teal-50' 
-                    : active 
-                    ? 'border-slate-300 bg-white' 
-                    : 'border-slate-100 bg-slate-50 opacity-50'
-                }`}>
-                <div className="flex items-center gap-3">
-                    {done ? (
-                    <CheckCircle2 size={20} className="text-teal-600" />
-                    ) : active ? (
-                    <div className="w-5 h-5 rounded-full border-2 border-slate-300 border-t-slate-600 animate-spin"></div>
-                    ) : (
-                    <Circle size={20} className="text-slate-300" />
-                    )}
-                    <span className={`font-medium ${done ? 'text-teal-900' : 'text-slate-700'}`}>
-                    {label}
-                    </span>
-                </div>
-                </div>
-            );
-
-            // 4. Tracking
-            const Tracking = () => (
-                <div className="h-full flex flex-col relative bg-slate-100">
-                {/* Map Background */}
-                <div className="flex-1 bg-slate-200 relative overflow-hidden flex items-center justify-center">
-                    {/* Grid Lines */}
-                    <div className="absolute inset-0 grid grid-cols-6 grid-rows-6 gap-0 opacity-10 pointer-events-none">
-                    {[...Array(36)].map((_, i) => <div key={i} className="border border-slate-400"></div>)}
-                    </div>
+                // 追踪目标逻辑 (仅对外加酸碱生效)
+                if (this.target && !this.target.markedForDeletion) {
+                    const dx = this.target.x - this.x;
+                    const dy = this.target.y - this.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
                     
-                    {/* Route Path */}
-                    <svg className="absolute w-full h-full pointer-events-none" style={{zIndex: 1}}>
-                    <path d="M 100 100 Q 200 150 250 300 T 350 500" fill="none" stroke="#0d9488" strokeWidth="4" strokeDasharray="8 4" className="animate-dash" />
-                    </svg>
+                    if (dist > 5) {
+                        this.vx = (dx / dist) * 3; // 追踪速度
+                        this.vy = (dy / dist) * 3;
+                    } else {
+                        // 碰撞发生！发生反应
+                        this.markedForDeletion = true;
+                        this.target.markedForDeletion = true;
+                        
+                        // 产生新物质和漂浮的字
+                        let newType = null;
+                        if (this.type === TYPES.ADDED_ACID) newType = TYPES.WEAK_ACID;
+                        else if (this.type === TYPES.ADDED_BASE) newType = TYPES.CONJ_BASE;
 
-                    {/* Destination Marker */}
-                    <div className="absolute top-[20%] left-[20%] z-10">
-                    <div className="relative">
-                        <div className="absolute -inset-4 bg-teal-500/20 rounded-full animate-ping"></div>
-                        <div className="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center shadow-lg text-white border-2 border-white">
-                            <MapPin size={20} />
-                        </div>
-                        <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-white px-2 py-1 rounded shadow text-xs font-bold whitespace-nowrap text-slate-700">Your Fleet</div>
-                    </div>
-                    </div>
+                        if (newType) {
+                            particles.push(new Particle(this.target.x, this.target.y, newType));
+                            floatTexts.push({ x: this.x, y: this.y, text: "+ H₂O", alpha: 1.0 });
+                            updateCounts();
+                        }
+                    }
+                }
 
-                    {/* Truck Marker (Animated) */}
-                    <div className="absolute z-20 animate-drive-in" style={{top: '60%', left: '70%'}}>
-                    <div className="relative">
-                        <div className="w-12 h-12 bg-teal-600 rounded-full flex items-center justify-center shadow-xl text-white border-2 border-white transform -rotate-12">
-                            <Truck size={24} />
-                        </div>
-                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-3 py-1 rounded-lg shadow text-xs font-bold whitespace-nowrap">
-                        GasOn Unit 05
-                        </div>
-                    </div>
-                    </div>
-                </div>
-
-                {/* Driver Card */}
-                <div className="bg-white rounded-t-3xl shadow-[0_-5px_20px_rgba(0,0,0,0.1)] p-6 z-30">
-                    <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
-                    
-                    <div className="flex justify-between items-start mb-6">
-                    <div>
-                        <h3 className="text-xl font-bold text-slate-800">En Route</h3>
-                        <p className="text-teal-600 font-medium">ETA: 12 Mins</p>
-                    </div>
-                    <div className="text-right">
-                        <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg mb-1">DOSH Certified</span>
-                        <p className="text-xs text-slate-400">Order #GO-9921</p>
-                    </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 border-t border-slate-100 pt-6">
-                    <div className="w-12 h-12 bg-slate-200 rounded-full overflow-hidden">
-                        <User size={48} className="text-slate-400 p-2" />
-                    </div>
-                    <div className="flex-1">
-                        <h4 className="font-bold text-slate-800"> Farah Zafirah binti Mohamad Yunus</h4>
-                        <p className="text-xs text-slate-500">Senior Safety Driver (4.9⭐)</p>
-                    </div>
-                    <button className="p-3 bg-teal-50 text-teal-600 rounded-full">
-                        <Navigation size={20} />
-                    </button>
-                    </div>
-
-                    <button 
-                    onClick={() => setScreen('dashboard')} 
-                    className="mt-6 w-full border border-slate-200 text-slate-500 py-3 rounded-xl text-sm font-medium hover:bg-slate-50"
-                    >
-                    Cancel Order
-                    </button>
-                </div>
-                </div>
-            );
-
-            return (
-                <div className="w-[390px] h-[844px] mx-auto bg-slate-50 relative overflow-hidden shadow-2xl rounded-[50px] border-[14px] border-slate-900 font-sans no-scrollbar box-content">
-                {/* Status Bar */}
-                <div className="h-8 bg-slate-900 w-full flex justify-between items-center px-6 text-white text-xs z-50 relative">
-                    <span>10:42 AM</span>
-                    <div className="flex gap-2">
-                    <span>5G</span>
-                    <span>100%</span>
-                    </div>
-                </div>
-
-                {/* Main Content */}
-                <div className="h-[calc(100%-32px)] overflow-y-auto no-scrollbar">
-                    {screen === 'dashboard' && <Dashboard />}
-                    {screen === 'order' && <OrderSummary />}
-                    {screen === 'safety' && <SafetyCheck />}
-                    {screen === 'tracking' && <Tracking />}
-                </div>
-                </div>
-            );
+                this.x += this.vx;
+                this.y += this.vy;
+            }
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<GasOnApp />);
+        // 初始化缓冲液粒子
+        function initBuffer() {
+            particles = [];
+            floatTexts = [];
+            for (let i = 0; i < 10; i++) {
+                spawnRandom(TYPES.WEAK_ACID);
+                spawnRandom(TYPES.CONJ_BASE);
+            }
+            updateCounts();
+            showStatus("缓冲液已就绪", false);
+        }
+
+        function spawnRandom(type) {
+            const liquidTop = canvas.height * 0.15;
+            const x = Math.random() * (canvas.width - type.radius * 2) + type.radius;
+            const y = Math.random() * (canvas.height - liquidTop - type.radius * 2) + liquidTop + type.radius;
+            particles.push(new Particle(x, y, type));
+        }
+
+        // 更新 UI 计数器
+        function updateCounts() {
+            const acidCount = particles.filter(p => p.type === TYPES.WEAK_ACID && !p.markedForDeletion).length;
+            const baseCount = particles.filter(p => p.type === TYPES.CONJ_BASE && !p.markedForDeletion).length;
+            countAcidEl.innerText = acidCount;
+            countBaseEl.innerText = baseCount;
+        }
+
+        function showStatus(text, isAlert = true) {
+            statusOverlay.innerText = text;
+            statusOverlay.style.opacity = '1';
+            statusOverlay.style.backgroundColor = isAlert ? 'rgba(220, 38, 38, 0.9)' : 'rgba(0, 0, 0, 0.7)';
+            setTimeout(() => { statusOverlay.style.opacity = '0'; }, 2000);
+        }
+
+        // 添加强酸 (H+)
+        document.getElementById('btnAddAcid').addEventListener('click', () => {
+            // 寻找一个目标共轭碱
+            const availableBases = particles.filter(p => p.type === TYPES.CONJ_BASE && !p.markedForDeletion);
+            if (availableBases.length === 0) {
+                showStatus("缓冲能力耗尽！pH 骤降！");
+                return;
+            }
+            
+            // 在顶部生成
+            const newAcid = new Particle(canvas.width / 2, 20, TYPES.ADDED_ACID);
+            // 随机锁定一个目标
+            newAcid.target = availableBases[Math.floor(Math.random() * availableBases.length)];
+            particles.push(newAcid);
+            showStatus("加入H⁺！向左移动生成弱酸", false);
+        });
+
+        // 添加强碱 (OH-)
+        document.getElementById('btnAddBase').addEventListener('click', () => {
+            // 寻找一个目标弱酸
+            const availableAcids = particles.filter(p => p.type === TYPES.WEAK_ACID && !p.markedForDeletion);
+            if (availableAcids.length === 0) {
+                showStatus("缓冲能力耗尽！pH 骤升！");
+                return;
+            }
+            
+            // 在顶部生成
+            const newBase = new Particle(canvas.width / 2, 20, TYPES.ADDED_BASE);
+            // 随机锁定一个目标
+            newBase.target = availableAcids[Math.floor(Math.random() * availableAcids.length)];
+            particles.push(newBase);
+            showStatus("加入OH⁻！向右移动生成共轭碱", false);
+        });
+
+        document.getElementById('btnReset').addEventListener('click', initBuffer);
+
+        // 主动画循环
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 更新和绘制粒子
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            // 移除被标记删除的粒子
+            particles = particles.filter(p => !p.markedForDeletion);
+
+            // 绘制漂浮的文本 (如 + H2O)
+            for (let i = floatTexts.length - 1; i >= 0; i--) {
+                let ft = floatTexts[i];
+                ctx.fillStyle = `rgba(14, 165, 233, ${ft.alpha})`; // 天蓝色
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ft.y -= 1; // 向上漂浮
+                ft.alpha -= 0.02; // 逐渐淡出
+                if (ft.alpha <= 0) {
+                    floatTexts.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // 启动
+        setTimeout(() => {
+            initBuffer();
+            animate();
+        }, 100); // 延迟一点等canvas尺寸确定
     </script>
 </body>
 </html>
-
