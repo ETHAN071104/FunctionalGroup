@@ -3,652 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ChemPilot - Chemistry Airplane Chase</title>
+    <title>ChemPilot Advance - Chemistry Airplane Chase</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --gb-case: #d1d5db; /* Classic Gray */
-            --gb-bezel: #374151; /* Dark Gray */
-            --gb-btn: #ef4444; /* Red Buttons */
-            --gb-dpad: #1f2937; /* Dark D-Pad */
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            color: #111827;
-            touch-action: none;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        /* --- Mobile / Default: GameBoy Shell --- */
-        .device-shell {
-            background-color: var(--gb-case);
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding: 15px;
-            position: relative;
-        }
-
-        .screen-wrapper {
-            background-color: var(--gb-bezel);
-            padding: 20px 20px 40px 20px;
-            border-radius: 10px 10px 25px 10px;
-            position: relative;
-            flex-shrink: 0;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        .screen-bezel-text {
-            color: #9ca3af;
-            font-size: 10px;
-            position: absolute;
-            top: 5px;
-            left: 50%;
-            transform: translateX(-50%);
-            letter-spacing: 2px;
-            font-weight: bold;
-        }
-
-        .screen-area {
-            background-color: #000;
-            width: 100%;
-            aspect-ratio: 1/1.1;
-            position: relative;
-            overflow: hidden;
-            border: 4px solid #111;
-            border-radius: 5px;
-        }
-
-        #game-canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .controls-area {
-            flex-grow: 1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 10px;
-            position: relative;
-        }
-
-        /* D-Pad */
-        .dpad { width: 110px; height: 110px; position: relative; }
-        .dpad-btn {
-            background-color: var(--gb-dpad);
-            position: absolute;
-            box-shadow: 0 4px 0 #000;
-            cursor: pointer;
-        }
-        .dpad-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; }
-        .dpad-left { width: 35px; height: 35px; top: 35px; left: 0; border-radius: 4px 0 0 4px; }
-        .dpad-right { width: 35px; height: 35px; top: 35px; right: 0; border-radius: 0 4px 4px 0; }
-        .dpad-up { width: 35px; height: 35px; top: 0; left: 35px; border-radius: 4px 4px 0 0; }
-        .dpad-down { width: 35px; height: 35px; bottom: 0; left: 35px; border-radius: 0 0 4px 4px; }
-        .dpad-center { width: 35px; height: 35px; top: 35px; left: 35px; box-shadow: none; }
-
-        /* Action Buttons */
-        .action-btns { display: flex; transform: rotate(-25deg); margin-top: -20px; }
-        .btn-a, .btn-b {
-            width: 45px; height: 45px;
-            background-color: var(--gb-btn); border-radius: 50%;
-            margin: 0 8px; box-shadow: 2px 4px 0 #991b1b;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            font-weight: bold; color: #991b1b; font-size: 14px;
-        }
-        .btn-a:active, .btn-b:active { transform: translateY(2px); box-shadow: 0 2px 0 #991b1b; }
-
-        .branding { text-align: center; font-family: 'Press Start 2P', cursive; font-size: 12px; color: #1e3a8a; margin-top: 15px; font-style: italic; }
-        .start-select-group { display: flex; justify-content: center; gap: 30px; padding-bottom: 20px; }
-        .pill-btn { width: 40px; height: 10px; background-color: #64748b; border-radius: 10px; transform: rotate(-20deg); box-shadow: inset 1px 2px 3px rgba(0,0,0,0.5); }
-
-        /* HUD */
+        :root { --gb-case: #d1d5db; --gb-bezel: #374151; --gb-btn: #ef4444; --gb-dpad: #1f2937; }
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #111827; touch-action: none; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .device-shell { background-color: var(--gb-case); width: 100vw; height: 100vh; display: flex; flex-direction: column; padding: 15px; position: relative; }
+        .screen-wrapper { background-color: var(--gb-bezel); padding: 20px 20px 40px 20px; border-radius: 10px 10px 25px 10px; position: relative; flex-shrink: 0; box-shadow: inset 0 0 15px rgba(0,0,0,0.6); }
+        .screen-area { background-color: #000; width: 100%; aspect-ratio: 1/1.2; position: relative; overflow: hidden; border: 4px solid #111; border-radius: 5px; }
+        #game-canvas { width: 100%; height: 100%; display: block; }
+        .dpad-container { width: 140px; height: 140px; position: relative; }
+        .dpad-cross { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 140px; height: 140px; }
+        .dpad-btn { background-color: var(--gb-dpad); position: absolute; cursor: pointer; box-shadow: 0 5px 0 #000; transition: all 0.1s; }
+        .dpad-horizontal { width: 140px; height: 45px; top: 47.5px; left: 0; border-radius: 6px; }
+        .dpad-vertical { width: 45px; height: 140px; top: 0; left: 47.5px; border-radius: 6px; }
+        .touch-zone { position: absolute; z-index: 10; width: 60px; height: 60px; top: 40px; }
+        .touch-left { left: 0; } .touch-right { right: 0; }
+        .btn-a { width: 55px; height: 55px; background-color: var(--gb-btn); border-radius: 50%; box-shadow: 2px 5px 0 #991b1b; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #991b1b; font-size: 18px; }
+        .btn-a:active { transform: translateY(2px); box-shadow: 0 2px 0 #991b1b; }
         .ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; align-items: center; }
         .interactive { pointer-events: auto; }
         .pixel-font { font-family: 'Press Start 2P', cursive; }
-
-        .show-on-desktop { display: none; }
-        .show-on-mobile { display: block; }
-
-        /* --- Tablet: Floating GameBoy --- */
-        @media (min-width: 500px) and (min-height: 750px) and (orientation: portrait), (min-width: 500px) and (max-width: 850px) {
-            .device-shell {
-                width: 400px; height: 720px;
-                border-radius: 10px 10px 60px 10px;
-                box-shadow: inset -5px -5px 15px rgba(0,0,0,0.3), 15px 15px 40px rgba(0,0,0,0.6);
-            }
-        }
-
-        /* --- Desktop: Arcade Mode (Wide Screen) --- */
-        @media (min-width: 851px) and (orientation: landscape) {
-            .device-shell {
-                background: transparent; box-shadow: none; padding: 0;
-                width: 100%; max-width: 1000px; height: 100vh;
-                border-radius: 0; justify-content: center;
-            }
-            .gb-decoration { display: none !important; }
-            .screen-wrapper {
-                background: transparent; padding: 0; border-radius: 0; height: 100%; box-shadow: none;
-            }
-            .screen-area {
-                aspect-ratio: auto; height: 100%; border: none; border-radius: 0;
-                border-left: 2px solid #334155; border-right: 2px solid #334155;
-                box-shadow: 0 0 50px rgba(0,0,0,0.8);
-            }
-            .show-on-desktop { display: block; }
-            .show-on-mobile { display: none; }
-        }
+        .hero-plane-container { width: 100%; height: 120px; position: relative; margin-bottom: 20px; perspective: 1000px; }
+        .hero-plane { width: 80px; height: 100px; margin: 0 auto; position: relative; animation: float 4s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0) rotateX(20deg); } 50% { transform: translateY(-15px) rotateX(15deg); } }
+        .plane-wing-hero { position: absolute; top: 40px; left: -40px; width: 160px; height: 20px; background: linear-gradient(to bottom, #64748b, #475569); clip-path: polygon(0 100%, 50% 0, 100% 100%); }
+        .plane-body-hero { position: absolute; top: 0; left: 30px; width: 20px; height: 100px; background: linear-gradient(to right, #cbd5e1, #ffffff, #94a3b8); border-radius: 50% 50% 20% 20%; }
+        .plane-cockpit-hero { position: absolute; top: 20px; left: 34px; width: 12px; height: 25px; background: #0ea5e9; border-radius: 50%; box-shadow: 0 0 10px #38bdf8; }
+        @media (min-width: 851px) and (orientation: landscape) { .device-shell { background: transparent; width: 100%; max-width: 1100px; height: 100vh; justify-content: center; } .gb-decoration { display: none !important; } .screen-wrapper { background: transparent; height: 100%; box-shadow: none; padding: 0; } .screen-area { aspect-ratio: auto; height: 100%; border: none; } }
+        .home-btn { background-color: transparent; border: 2px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 12px; transition: all 0.2s; margin-top: 10px; cursor: pointer; }
+        .home-btn:hover { background: rgba(255,255,255,0.1); color: white; border-color: white; }
     </style>
 </head>
 <body>
-
     <div class="device-shell">
         <div class="screen-wrapper">
-            <div class="screen-bezel-text gb-decoration">DOT MATRIX WITH STEREO SOUND</div>
-            
             <div class="screen-area" id="screen-container">
                 <canvas id="game-canvas"></canvas>
-
-                <!-- HUD -->
-                <div id="hud" class="ui-overlay pt-4 px-4 hidden">
+                <div id="hud" class="ui-overlay pt-6 px-6 hidden">
                     <div class="flex justify-between w-full text-white pixel-font text-[10px] md:text-[14px]">
                         <div>SCORE:<span id="score-display" class="text-yellow-400">0</span></div>
                         <div id="lives-display">❤️❤️❤️</div>
                     </div>
-                    <div class="mt-6 bg-black/70 px-4 py-2 border-2 border-blue-500 rounded text-center shadow-[0_0_15px_rgba(56,189,248,0.5)]">
-                        <div class="text-[10px] md:text-[12px] text-blue-400 font-bold mb-1 tracking-widest">TARGET IDENTIFIED</div>
-                        <div id="target-name" class="text-white text-[16px] md:text-[24px] font-extrabold tracking-widest">Alcohol</div>
+                    <div class="mt-8 bg-slate-900/80 px-6 py-3 border-2 border-blue-400 rounded-xl text-center shadow-[0_0_20px_rgba(56,189,248,0.4)]">
+                        <div id="target-name" class="text-white text-[18px] md:text-[28px] font-extrabold tracking-widest uppercase">Alcohol</div>
                     </div>
                 </div>
-
-                <!-- Start Screen -->
-                <div id="start-screen" class="ui-overlay justify-center bg-slate-900/90 backdrop-blur z-50">
-                    <div class="text-center text-white p-6 interactive transform transition hover:scale-105">
-                        <h1 class="pixel-font text-2xl md:text-4xl mb-2 text-transparent bg-clip-text bg-gradient-to-b from-blue-400 to-blue-600">CHEM PILOT</h1>
-                        <p class="text-[12px] md:text-[16px] mb-8 text-slate-400 font-bold">Catch the correct functional group!</p>
-                        
-                        <div class="text-[10px] md:text-[14px] mb-8 bg-slate-800/80 p-4 rounded-xl border border-slate-700 text-slate-300 space-y-3">
-                            <p class="show-on-mobile text-blue-300">🎮 Press <span class="text-red-400">A</span> or START</p>
-                            <p class="show-on-desktop text-blue-300">⌨️ Press <span class="text-yellow-400">SPACE</span> to Start</p>
-                            <p>⬅️ ➡️ to Steer</p>
-                        </div>
-
-                        <button id="start-btn" class="bg-blue-600 px-8 py-3 md:py-4 rounded-lg font-bold text-[14px] md:text-[18px] hover:bg-blue-500 transition-colors shadow-[0_4px_0_rgb(30,64,175)] active:translate-y-1 active:shadow-none">
-                            INITIATE LAUNCH
-                        </button>
+                <div id="start-screen" class="ui-overlay justify-center bg-slate-950 z-50">
+                    <div class="text-center text-white p-6 interactive w-full">
+                        <div class="hero-plane-container"><div class="hero-plane"><div class="plane-wing-hero"></div><div class="plane-body-hero"></div><div class="plane-cockpit-hero"></div></div></div>
+                        <h1 class="pixel-font text-2xl md:text-5xl mb-2 text-blue-400">CHEMPILOT</h1>
+                        <h2 class="pixel-font text-xs md:text-lg mb-8 text-emerald-400 opacity-80">ADVANCE COLOR</h2>
+                        <button id="start-btn" class="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-xl font-black text-lg md:text-2xl shadow-[0_6px_0_rgb(30,64,175)] active:translate-y-1 active:shadow-none">START MISSION</button>
                     </div>
                 </div>
-
-                <!-- Game Over Screen -->
-                <div id="game-over-screen" class="ui-overlay justify-center bg-red-900/90 backdrop-blur z-50 hidden">
-                    <div class="text-center text-white interactive">
-                        <h1 class="pixel-font text-3xl md:text-5xl mb-4 text-red-500 shadow-black drop-shadow-lg">CRASHED!</h1>
-                        <p class="text-[14px] md:text-[18px] mb-6">FINAL SCORE: <span id="final-score" class="font-bold text-2xl">0</span></p>
-                        <p class="text-yellow-400 text-[10px] md:text-[14px] font-bold mb-8">Need 70 points to pass!</p>
-                        <button id="restart-btn" class="bg-white text-red-700 px-6 py-3 rounded-lg font-bold hover:bg-gray-200 transition">
-                            REDEPLOY
-                        </button>
+                <div id="game-over-screen" class="ui-overlay justify-center bg-red-950/95 z-50 hidden">
+                    <div class="text-center text-white interactive p-8">
+                        <h1 class="pixel-font text-4xl mb-4 text-red-500">CRASHED</h1>
+                        <p class="text-xl mb-8">SCORE: <span id="final-score" class="font-bold">0</span></p>
+                        <button id="restart-btn" class="w-full bg-white text-red-900 px-8 py-4 rounded-xl font-bold text-lg mb-4">RETRY</button>
+                        <button class="home-btn w-full" onclick="showHome()">MAIN MENU</button>
                     </div>
                 </div>
-
-                <!-- Success Screen -->
-                <div id="success-screen" class="ui-overlay justify-center bg-emerald-900/90 backdrop-blur z-50 hidden">
-                    <div class="text-center text-white interactive p-6">
-                        <h1 class="pixel-font text-3xl md:text-5xl mb-4 text-yellow-300 drop-shadow-lg">MISSION PASSED!</h1>
-                        <p class="text-[14px] md:text-[18px] mb-8">SCORE: <span id="success-score" class="font-bold text-3xl">0</span></p>
-                        
-                        <a href="https://forms.google.com/" target="_blank" class="block bg-blue-500 hover:bg-blue-400 text-white font-bold py-3 md:py-4 px-6 rounded-lg mb-6 shadow-[0_4px_0_rgb(30,64,175)] active:translate-y-1 active:shadow-none transition-all">
-                            📝 SUBMIT SCORE TO HQ
-                        </a>
-                        <button id="play-again-btn" class="text-slate-300 hover:text-white underline font-bold">
-                            Fly Another Mission
-                        </button>
+                <div id="success-screen" class="ui-overlay justify-center bg-emerald-950/95 z-50 hidden">
+                    <div class="text-center text-white interactive p-8">
+                        <h1 class="pixel-font text-3xl mb-4 text-emerald-400">MISSION CLEAR</h1>
+                        <p class="text-xl mb-8">SCORE: <span id="success-score" class="font-bold">0</span></p>
+                        <a href="https://docs.google.com/forms/d/e/1FAIpQLScBgtNpQNfJ2xU9m1grQWaiDRm9tX8rItr2KO4FzVUiFWiPnA/viewform?usp=publish-editor" target="_blank" class="block bg-blue-500 text-white font-bold py-5 px-8 rounded-xl mb-4 shadow-[0_6px_0_rgb(30,64,175)] text-lg">SUBMIT SCORE</a>
+                        <button class="home-btn w-full" onclick="showHome()">MAIN MENU</button>
                     </div>
                 </div>
-
             </div>
         </div>
-
-        <div class="branding gb-decoration">ChemBoy <span class="text-[8px]">TM</span></div>
-
-        <div class="controls-area gb-decoration">
-            <!-- D-Pad -->
-            <div class="dpad">
-                <div class="dpad-btn dpad-up"></div>
-                <div class="dpad-btn dpad-down"></div>
-                <div id="ctrl-left" class="dpad-btn dpad-left"></div>
-                <div id="ctrl-right" class="dpad-btn dpad-right"></div>
-                <div class="dpad-btn dpad-center"></div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="action-btns">
-                <div class="btn-b">B</div>
-                <div id="ctrl-a" class="btn-a">A</div>
-            </div>
-        </div>
-
-        <!-- Start/Select Buttons -->
-        <div class="start-select-group gb-decoration">
-            <div class="pill-btn"></div>
-            <div class="pill-btn"></div>
+        <div class="controls-area gb-decoration flex justify-between items-center px-10 flex-grow">
+            <div class="dpad-container"><div class="dpad-cross"><div class="dpad-btn dpad-horizontal"></div><div class="dpad-btn dpad-vertical"></div><div id="ctrl-left" class="touch-zone touch-left"></div><div id="ctrl-right" class="touch-zone touch-right"></div></div></div>
+            <div id="ctrl-a" class="btn-a">A</div>
         </div>
     </div>
-
     <script>
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
-        const screenContainer = document.getElementById('screen-container');
-
-        // Chemistry Data
+        const canvas = document.getElementById('game-canvas'), ctx = canvas.getContext('2d'), screenContainer = document.getElementById('screen-container');
         const chemistryData = [
-            { name: "Alkene", formula: "-C=C-" },
-            { name: "Alkyne", formula: "-C≡C-" },
-            { name: "Alkyl Halide", formula: "-X" },
-            { name: "Alcohol", formula: "-OH" },
-            { name: "Amine", formula: "-NH2" },
-            { name: "Ether", formula: "-O-" },
-            { name: "Carboxylic Acid", formula: "-COOH" },
-            { name: "Ketone", formula: "-CO-" },
-            { name: "Aldehyde", formula: "-CHO" },
-            { name: "Ester", formula: "-COOR" }
+            { name: "Alkene", formula: "-C=C-" }, { name: "Alkyne", formula: "-C≡C-" }, { name: "Alkyl Halide", formula: "-X" }, { name: "Alcohol", formula: "-OH" },
+            { name: "Amine", formula: "-NH2" }, { name: "Ether", formula: "-O-" }, { name: "Carboxylic Acid", formula: "-COOH" }, { name: "Ketone", formula: "-CO-" },
+            { name: "Aldehyde", formula: "-CHO" }, { name: "Ester", formula: "-COOR" }
         ];
-
-        // Game State
-        let gameState = 'START';
-        let score = 0;
-        let lives = 3;
-        let animationId;
-        let consecutiveCorrect = 0;
-        let bgStreaks = [];
-        let explosionTimer = 0;
-        
-        let player = { x: 0, y: 0, width: 50, height: 60, speed: 7 };
-        let clouds = [];
-        let particles = [];
-        let currentTarget = null;
+        let gameState = 'START', score = 0, lives = 3, consecutiveCorrect = 0, bgStreaks = [], particles = [], clouds = [], currentTarget = null, animationId;
         const keys = { left: false, right: false };
+        let player = { x: 0, y: 0, width: 50, height: 60, speed: 8 };
 
         function resizeCanvas() {
-            canvas.width = screenContainer.clientWidth;
-            canvas.height = screenContainer.clientHeight;
-            
-            bgStreaks = [];
-            for(let i=0; i<30; i++) {
-                bgStreaks.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    length: 10 + Math.random() * 40,
-                    speed: 2 + Math.random() * 3
-                });
-            }
-
-            // Scale player based on screen width, but cap it for ultra-wide desktop
-            player.width = Math.min(canvas.width * 0.15, 80);
-            player.height = player.width * 1.2;
-            player.speed = canvas.width * 0.015; // Speed relative to screen
-
-            player.y = canvas.height - player.height - 20;
+            canvas.width = screenContainer.clientWidth; canvas.height = screenContainer.clientHeight;
+            player.width = Math.min(canvas.width * 0.14, 80); player.height = player.width * 1.2;
+            player.speed = 8; // Fixed speed for better control
+            player.y = canvas.height - player.height - 30;
             if (gameState === 'START') player.x = canvas.width / 2;
+            bgStreaks = Array.from({length: 40}, () => ({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, length: 15 + Math.random() * 50, speed: 2 + Math.random() * 4 }));
+        }
+        window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+        function createExplosion(x, y, color, count = 20) {
+            for (let i = 0; i < count; i++) particles.push({ x, y, vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10, life: 1, color, size: 2 + Math.random() * 3 });
         }
 
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
-
-        // Input Handling
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft') keys.left = true;
-            if (e.key === 'ArrowRight') keys.right = true;
-            if ((e.key === ' ' || e.key === 'Enter') && gameState !== 'PLAYING' && gameState !== 'EXPLODING') {
-                e.preventDefault();
-                startGame();
-            }
-        });
-        window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowLeft') keys.left = false;
-            if (e.key === 'ArrowRight') keys.right = false;
-        });
-
-        // Mobile Controller Logic
-        const bindBtn = (id, key) => {
-            const el = document.getElementById(id);
+        function bindBtn(id, key) {
+            const el = document.getElementById(id); if(!el) return;
             const start = (e) => { e.preventDefault(); keys[key] = true; };
             const end = (e) => { e.preventDefault(); keys[key] = false; };
-            el.addEventListener('touchstart', start, {passive: false});
-            el.addEventListener('touchend', end, {passive: false});
-            el.addEventListener('mousedown', start);
-            el.addEventListener('mouseup', end);
-            el.addEventListener('mouseleave', end);
-        };
+            el.addEventListener('touchstart', start, {passive: false}); el.addEventListener('touchend', end, {passive: false});
+            el.addEventListener('mousedown', start); el.addEventListener('mouseup', end); el.addEventListener('mouseleave', end);
+        }
+        bindBtn('ctrl-left', 'left'); bindBtn('ctrl-right', 'right');
+        document.getElementById('ctrl-a').addEventListener('click', () => { if(gameState !== 'PLAYING') startGame(); });
+        window.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') keys.left = true; if (e.key === 'ArrowRight') keys.right = true; if (e.key === ' ' && gameState !== 'PLAYING') startGame(); });
+        window.addEventListener('keyup', (e) => { if (e.key === 'ArrowLeft') keys.left = false; if (e.key === 'ArrowRight') keys.right = false; });
 
-        bindBtn('ctrl-left', 'left');
-        bindBtn('ctrl-right', 'right');
-        document.getElementById('ctrl-a').addEventListener('click', () => {
-            if (gameState === 'START' || gameState === 'GAMEOVER') startGame();
-        });
-
+        function showHome() { gameState = 'START'; cancelAnimationFrame(animationId); ['game-over-screen', 'success-screen', 'hud'].forEach(id => document.getElementById(id).classList.add('hidden')); document.getElementById('start-screen').classList.remove('hidden'); ctx.clearRect(0,0,canvas.width,canvas.height); }
+        function startGame() { gameState = 'PLAYING'; score = 0; lives = 3; consecutiveCorrect = 0; particles = []; document.getElementById('score-display').innerText = score; document.getElementById('lives-display').innerText = '❤️'.repeat(lives); ['start-screen', 'game-over-screen', 'success-screen'].forEach(id => document.getElementById(id).classList.add('hidden')); document.getElementById('hud').classList.remove('hidden'); generateQuestion(); gameLoop(); }
         function generateQuestion() {
-            clouds = [];
-            currentTarget = chemistryData[Math.floor(Math.random() * chemistryData.length)];
+            clouds = []; currentTarget = chemistryData[Math.floor(Math.random() * chemistryData.length)];
             document.getElementById('target-name').innerText = currentTarget.name;
-
-            let options = [currentTarget];
-            let availableWrong = chemistryData.filter(item => item.name !== currentTarget.name);
-            shuffleArray(availableWrong);
-            options.push(availableWrong[0]);
-            options.push(availableWrong[1]);
-            shuffleArray(options);
-
-            const cloudSpacing = canvas.width / 4;
-            options.forEach((opt, index) => {
-                let currentSpeed = (canvas.height * 0.003) + (consecutiveCorrect * 0.2);
-                clouds.push({
-                    x: cloudSpacing * (index + 1),
-                    y: -100 - Math.random() * 100,
-                    radius: Math.min(canvas.width * 0.12, 60),
-                    formula: opt.formula,
-                    isCorrect: opt.name === currentTarget.name,
-                    speed: Math.min(currentSpeed, canvas.height * 0.01)
-                });
-            });
-        }
-
-        function createExplosion(x, y, color, amount = 15) {
-            for (let i = 0; i < amount; i++) {
-                particles.push({ 
-                    x, y, 
-                    vx: (Math.random() - 0.5) * 10, 
-                    vy: (Math.random() - 0.5) * 10, 
-                    life: 1 + Math.random(), 
-                    color 
-                });
-            }
-        }
-
-        function drawBackground() {
-            // Dynamic Deep Space Gradient
-            let grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            grd.addColorStop(0, "#020617"); // Very dark blue
-            grd.addColorStop(0.5, "#0f172a");
-            grd.addColorStop(1, "#1e3a8a"); // Brighter blue at bottom
-            ctx.fillStyle = grd;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Speed lines
-            let speedBonus = consecutiveCorrect > 2 ? consecutiveCorrect * 0.5 : 0;
-            bgStreaks.forEach(streak => {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-                streak.y += streak.speed + speedBonus;
-                if (streak.y > canvas.height) {
-                    streak.y = -streak.length;
-                    streak.x = Math.random() * canvas.width;
-                }
-                ctx.fillRect(streak.x, streak.y, 2, streak.length);
-            });
-        }
-
-        function drawPlayer() {
-            if (gameState === 'EXPLODING') return;
-            ctx.save();
-            ctx.translate(player.x, player.y);
-            
-            const w = player.width / 2;
-            const h = player.height;
-
-            // Engine Flame
-            if (gameState === 'PLAYING') {
-                ctx.fillStyle = Math.random() > 0.5 ? '#facc15' : '#ef4444';
-                ctx.beginPath();
-                ctx.moveTo(-w*0.3, h*0.8);
-                ctx.lineTo(w*0.3, h*0.8);
-                ctx.lineTo(0, h + Math.random() * h*0.5);
-                ctx.fill();
-            }
-
-            // Shadow for depth
-            ctx.shadowColor = 'rgba(0,0,0,0.4)';
-            ctx.shadowBlur = 15;
-            ctx.shadowOffsetY = 10;
-
-            // Main Wings (Delta shape)
-            ctx.fillStyle = '#64748b'; // Slate 500
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(w*1.5, h*0.6);
-            ctx.lineTo(w, h*0.6);
-            ctx.lineTo(0, h*0.4);
-            ctx.lineTo(-w, h*0.6);
-            ctx.lineTo(-w*1.5, h*0.6);
-            ctx.closePath();
-            ctx.fill();
-
-            // Reset shadow
-            ctx.shadowColor = 'transparent';
-
-            // Tail Wings
-            ctx.fillStyle = '#475569'; // Slate 600
-            ctx.beginPath();
-            ctx.moveTo(0, h*0.6);
-            ctx.lineTo(w*0.6, h*0.9);
-            ctx.lineTo(-w*0.6, h*0.9);
-            ctx.fill();
-
-            // Fuselage (Body Gradient)
-            let bodyGrad = ctx.createLinearGradient(-w*0.5, 0, w*0.5, 0);
-            bodyGrad.addColorStop(0, '#cbd5e1');
-            bodyGrad.addColorStop(0.5, '#ffffff');
-            bodyGrad.addColorStop(1, '#94a3b8');
-            ctx.fillStyle = bodyGrad;
-            
-            ctx.beginPath();
-            ctx.moveTo(0, -h*0.2); // Nose
-            ctx.quadraticCurveTo(w*0.4, h*0.2, w*0.3, h*0.8);
-            ctx.quadraticCurveTo(0, h, -w*0.3, h*0.8);
-            ctx.quadraticCurveTo(-w*0.4, h*0.2, 0, -h*0.2);
-            ctx.fill();
-
-            // Cockpit Canopy
-            ctx.fillStyle = '#38bdf8'; // Sky 400
-            ctx.beginPath();
-            ctx.moveTo(0, h*0.1);
-            ctx.quadraticCurveTo(w*0.2, h*0.3, 0, h*0.4);
-            ctx.quadraticCurveTo(-w*0.2, h*0.3, 0, h*0.1);
-            ctx.fill();
-
-            ctx.restore();
-        }
-
-        function drawClouds() {
-            clouds.forEach(cloud => {
-                // Glow effect
-                ctx.shadowColor = 'rgba(255, 255, 255, 0.4)';
-                ctx.shadowBlur = 20;
-
-                // Cloud shape
-                ctx.fillStyle = 'rgba(241, 245, 249, 0.95)';
-                ctx.beginPath();
-                ctx.arc(cloud.x, cloud.y, cloud.radius, 0, Math.PI * 2);
-                ctx.arc(cloud.x - cloud.radius*0.5, cloud.y + cloud.radius*0.2, cloud.radius*0.7, 0, Math.PI * 2);
-                ctx.arc(cloud.x + cloud.radius*0.5, cloud.y + cloud.radius*0.2, cloud.radius*0.7, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.shadowBlur = 0; // reset
-
-                // Text
-                ctx.fillStyle = '#0f172a';
-                let fontSize = Math.max(16, Math.floor(cloud.radius * 0.45));
-                ctx.font = `bold ${fontSize}px Inter`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(cloud.formula, cloud.x, cloud.y + 5);
-            });
+            let options = [currentTarget, ...chemistryData.filter(i => i.name !== currentTarget.name).sort(() => 0.5 - Math.random()).slice(0, 2)].sort(() => 0.5 - Math.random());
+            options.forEach((opt, i) => clouds.push({ x: (canvas.width / 4) * (i + 1), y: -100 - Math.random() * 150, radius: Math.min(canvas.width * 0.13, 65), formula: opt.formula, isCorrect: opt.name === currentTarget.name, speed: (canvas.height * 0.004) + (consecutiveCorrect * 0.2) }));
         }
 
         function gameLoop() {
             if (gameState !== 'PLAYING' && gameState !== 'EXPLODING') return;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground();
+            ctx.fillStyle = '#020617'; ctx.fillRect(0,0,canvas.width,canvas.height);
+            bgStreaks.forEach(s => { ctx.fillStyle = 'rgba(255, 255, 255, 0.2)'; s.y += s.speed + (consecutiveCorrect * 0.5); if (s.y > canvas.height) { s.y = -s.length; s.x = Math.random() * canvas.width; } ctx.fillRect(s.x, s.y, 2, s.length); });
 
             if (gameState === 'PLAYING') {
-                // Movement
-                if (keys.left) player.x -= player.speed;
-                if (keys.right) player.x += player.speed;
+                if (keys.left) player.x -= player.speed; if (keys.right) player.x += player.speed;
                 player.x = Math.max(player.width/2, Math.min(canvas.width - player.width/2, player.x));
-
-                // Cloud Logic
-                for (let i = clouds.length - 1; i >= 0; i--) {
-                    let cloud = clouds[i];
-                    cloud.y += cloud.speed;
-
-                    // Collision math
-                    let dx = player.x - cloud.x;
-                    let dy = player.y - cloud.y;
-                    let distance = Math.sqrt(dx * dx + dy * dy);
-
-                    if (distance < cloud.radius + player.height/3) {
-                        if (cloud.isCorrect) {
-                            score += 10;
-                            consecutiveCorrect++;
-                            document.getElementById('score-display').innerText = score;
-                            createExplosion(cloud.x, cloud.y, '#4ade80', 20); // Green boom
-                            generateQuestion();
-                            break;
-                        } else {
-                            lives--;
-                            consecutiveCorrect = 0;
-                            updateLivesDisplay();
-                            
-                            // Screen flash red
-                            ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
-                            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                            createExplosion(cloud.x, cloud.y, '#ef4444', 30); // Red boom
-                            
-                            if (lives <= 0) { triggerExplodingState(); return; }
-                            generateQuestion();
-                            break;
-                        }
-                    }
-                    
-                    // Cloud missed
-                    if (cloud.y > canvas.height + cloud.radius) {
-                        if (cloud.isCorrect) {
-                            lives--;
-                            consecutiveCorrect = 0;
-                            updateLivesDisplay();
-                            ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
-                            ctx.fillRect(0, 0, canvas.width, canvas.height);
-                            if (lives <= 0) { triggerExplodingState(); return; }
-                            generateQuestion();
-                        } else {
-                            clouds.splice(i, 1);
-                        }
-                    }
-                }
+                clouds.forEach((c, i) => {
+                    c.y += c.speed;
+                    if (Math.sqrt((player.x - c.x)**2 + (player.y - c.y)**2) < c.radius + player.height/3) {
+                        if (c.isCorrect) { score += 10; consecutiveCorrect++; document.getElementById('score-display').innerText = score; createExplosion(c.x, c.y, '#4ade80'); generateQuestion(); }
+                        else { lives--; consecutiveCorrect = 0; document.getElementById('lives-display').innerText = '❤️'.repeat(lives); createExplosion(c.x, c.y, '#ef4444'); if (lives <= 0) { gameState = 'EXPLODING'; createExplosion(player.x, player.y, '#f97316', 50); setTimeout(endGame, 1000); } else generateQuestion(); }
+                    } else if (c.y > canvas.height + c.radius) { if (c.isCorrect) { lives--; consecutiveCorrect = 0; document.getElementById('lives-display').innerText = '❤️'.repeat(lives); if (lives <= 0) { gameState = 'EXPLODING'; createExplosion(player.x, player.y, '#f97316', 50); setTimeout(endGame, 1000); } else generateQuestion(); } else clouds.splice(i, 1); }
+                });
+                clouds.forEach(c => { ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(c.x, c.y, c.radius, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#1e293b'; ctx.font = `bold ${Math.floor(c.radius*0.5)}px Inter`; ctx.textAlign='center'; ctx.fillText(c.formula, c.x, c.y+5); });
             }
-
-            if (gameState === 'EXPLODING') {
-                explosionTimer--;
-                if (explosionTimer <= 0) {
-                    triggerGameOver();
-                    return;
-                }
-            }
-
-            if (gameState === 'PLAYING') drawClouds();
-            drawPlayer();
             
-            // Render Particles
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.x += p.vx; p.y += p.vy; p.life -= 0.03;
-                if (p.life <= 0) particles.splice(i, 1);
-                else {
-                    ctx.globalAlpha = p.life;
-                    ctx.fillStyle = p.color;
-                    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill();
-                    ctx.globalAlpha = 1;
-                }
+            if (gameState !== 'EXPLODING') {
+                ctx.save(); ctx.translate(player.x, player.y); const w = player.width/2, h = player.height;
+                if (gameState === 'PLAYING') { ctx.fillStyle = Math.random() > 0.5 ? '#fbbf24' : '#ef4444'; ctx.beginPath(); ctx.moveTo(-w*0.3, h*0.8); ctx.lineTo(w*0.3, h*0.8); ctx.lineTo(0, h + Math.random() * 20); ctx.fill(); }
+                ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(w*1.8, h*0.6); ctx.lineTo(-w*1.8, h*0.6); ctx.fill();
+                ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.moveTo(0, -h*0.3); ctx.quadraticCurveTo(w*0.5, h*0.2, w*0.4, h*0.9); ctx.lineTo(-w*0.4, h*0.9); ctx.quadraticCurveTo(-w*0.5, h*0.2, 0, -h*0.3); ctx.fill();
+                ctx.fillStyle = '#0ea5e9'; ctx.beginPath(); ctx.ellipse(0, h*0.25, w*0.25, h*0.15, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
             }
 
+            particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life -= 0.02; if (p.life <= 0) particles.splice(i, 1); else { ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1; } });
             animationId = requestAnimationFrame(gameLoop);
         }
 
-        function updateLivesDisplay() {
-            document.getElementById('lives-display').innerText = '❤️'.repeat(lives);
-        }
-
-        function startGame() {
-            gameState = 'PLAYING';
-            score = 0; lives = 3; consecutiveCorrect = 0; particles = [];
-            document.getElementById('score-display').innerText = score;
-            updateLivesDisplay();
-            player.x = canvas.width / 2;
-            
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('game-over-screen').classList.add('hidden');
-            document.getElementById('success-screen').classList.add('hidden');
-            document.getElementById('hud').classList.remove('hidden');
-            
-            generateQuestion();
-            if (animationId) cancelAnimationFrame(animationId);
-            gameLoop();
-        }
-
-        function triggerExplodingState() {
-            gameState = 'EXPLODING';
-            explosionTimer = 50;
-            // Big player explosion
-            for(let i=0; i<60; i++) {
-                particles.push({ 
-                    x: player.x, y: player.y, 
-                    vx: (Math.random() - 0.5) * 20, vy: (Math.random() - 0.5) * 20, 
-                    life: 1.5 + Math.random(), 
-                    color: Math.random() > 0.5 ? '#ef4444' : '#facc15' 
-                });
-            }
-            requestAnimationFrame(gameLoop);
-        }
-
-        function triggerGameOver() {
-            gameState = 'GAMEOVER';
-            document.getElementById('hud').classList.add('hidden');
-            if (score >= 70) {
-                document.getElementById('success-screen').classList.remove('hidden');
-                document.getElementById('success-score').innerText = score;
-            } else {
-                document.getElementById('game-over-screen').classList.remove('hidden');
-                document.getElementById('final-score').innerText = score;
-            }
-        }
-
-        document.getElementById('start-btn').addEventListener('click', startGame);
-        document.getElementById('restart-btn').addEventListener('click', startGame);
-        document.getElementById('play-again-btn').addEventListener('click', startGame);
-
-        // Initial Draw Setup
-        drawBackground();
-        drawPlayer();
-
+        function endGame() { cancelAnimationFrame(animationId); document.getElementById('hud').classList.add('hidden'); if (score >= 70) { document.getElementById('success-screen').classList.remove('hidden'); document.getElementById('success-score').innerText = score; } else { document.getElementById('game-over-screen').classList.remove('hidden'); document.getElementById('final-score').innerText = score; } }
+        document.getElementById('start-btn').addEventListener('click', startGame); document.getElementById('restart-btn').addEventListener('click', startGame);
+        showHome();
     </script>
 </body>
 </html>
