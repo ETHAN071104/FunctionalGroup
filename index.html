@@ -1,278 +1,587 @@
-html
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>缓冲液反应动画演示</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Functional Groups Airplane Chase</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        canvas { background-color: #f0fdf4; border-radius: 0 0 1rem 1rem; }
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: none; /* Prevent scroll on touch */
+            background-color: #0f172a;
+            color: white;
+            overflow: hidden;
+        }
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through to buttons */
+        }
+        .interactive-btn {
+            pointer-events: auto;
+        }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+<body class="flex flex-col items-center justify-center h-screen w-screen relative">
 
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden border border-gray-200">
-        <!-- 顶部控制栏 -->
-        <div class="bg-gray-50 p-6 border-b border-gray-200">
-            <h2 class="text-xl font-bold text-gray-800 mb-2">酸性缓冲液工作原理 (Acidic Buffer)</h2>
-            <p class="text-sm text-gray-600 mb-4">观察加入酸 (H⁺) 或碱 (OH⁻) 时，缓冲液内部粒子如何互相反应以维持平衡。</p>
-            
-            <div class="flex flex-wrap gap-3">
-                <button id="btnAddAcid" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow transition active:scale-95 flex items-center">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                    添加酸 (H⁺/H₃O⁺)
-                </button>
-                <button id="btnAddBase" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow transition active:scale-95 flex items-center">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                    添加碱 (OH⁻)
-                </button>
-                <button id="btnReset" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg shadow transition active:scale-95 ml-auto">
-                    重置缓冲液
-                </button>
-            </div>
+    <!-- Main Game Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- UI Overlay: HUD (Score, Lives, Target Question) -->
+    <div id="hud" class="ui-layer flex flex-col items-center pt-4 hidden z-30">
+        <div class="flex justify-between w-full max-w-md px-6">
+            <div class="bg-slate-900/80 text-white px-4 py-2 rounded-xl border border-slate-600 font-bold tracking-wider shadow-lg">Score: <span id="score-display" class="text-yellow-400">0</span></div>
+            <div class="bg-slate-900/80 text-white px-4 py-2 rounded-xl border border-slate-600 shadow-lg">Lives: <span id="lives-display">❤️❤️❤️</span></div>
         </div>
-
-        <!-- 图例解释 -->
-        <div class="flex flex-wrap justify-center gap-6 p-4 text-sm font-medium border-b border-gray-100">
-            <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-blue-500 mr-2 border border-blue-700"></span>弱酸 (CH₃COOH)</div>
-            <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-green-500 mr-2 border border-green-700"></span>共轭碱 (CH₃COO⁻)</div>
-            <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-red-500 mr-2 border border-red-700"></span>外加酸 (H⁺)</div>
-            <div class="flex items-center"><span class="w-4 h-4 rounded-full bg-purple-500 mr-2 border border-purple-700"></span>外加碱 (OH⁻)</div>
-        </div>
-
-        <!-- 动画区域 -->
-        <div class="relative w-full aspect-video flex justify-center bg-gray-50 p-6">
-            <!-- 烧杯外观容器 -->
-            <div class="relative w-full max-w-md h-full rounded-b-2xl border-4 border-t-0 border-gray-300 shadow-inner flex items-end justify-center bg-white">
-                <!-- 液体背景 -->
-                <div class="absolute bottom-0 w-full h-[85%] bg-blue-50/50 rounded-b-xl border-t border-blue-100"></div>
-                <!-- 粒子画板 -->
-                <canvas id="bufferCanvas" class="absolute inset-0 w-full h-full"></canvas>
-            </div>
-            
-            <!-- 状态提示框 -->
-            <div id="statusOverlay" class="absolute top-8 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-bold opacity-0 transition-opacity duration-300 pointer-events-none">
-                反应发生！
-            </div>
-        </div>
-
-        <!-- 数据统计 -->
-        <div class="bg-gray-100 p-4 flex justify-around text-center border-t border-gray-200">
-            <div>
-                <div class="text-xs text-gray-500 uppercase font-bold">弱酸 (CH₃COOH)</div>
-                <div id="countAcid" class="text-2xl font-black text-blue-600">10</div>
-            </div>
-            <div>
-                <div class="text-xs text-gray-500 uppercase font-bold">共轭碱 (CH₃COO⁻)</div>
-                <div id="countBase" class="text-2xl font-black text-green-600">10</div>
-            </div>
+        <div class="mt-4 bg-slate-900/90 px-8 py-3 rounded-full shadow-[0_0_15px_rgba(56,189,248,0.5)] border-2 border-blue-400">
+            <h1 class="text-2xl font-extrabold text-blue-400 text-center tracking-wider">
+                Target: <span id="target-name" class="text-white">Alcohol</span>
+            </h1>
         </div>
     </div>
 
-    <script>
-        const canvas = document.getElementById('bufferCanvas');
-        const ctx = canvas.getContext('2d');
-        const countAcidEl = document.getElementById('countAcid');
-        const countBaseEl = document.getElementById('countBase');
-        const statusOverlay = document.getElementById('statusOverlay');
+    <!-- UI Overlay: Start Screen -->
+    <div id="start-screen" class="ui-layer flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm z-50">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm mx-4 interactive-btn transform transition hover:scale-105 duration-300">
+            <div class="text-6xl mb-4">✈️</div>
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">ChemPilot</h1>
+            <p class="text-slate-500 mb-6 font-medium">Catch the correct functional group!</p>
+            <div class="text-sm text-slate-600 mb-6 text-left bg-slate-100 p-4 rounded-xl">
+                <p>💻 <b>Desktop:</b> Use Left/Right Arrow Keys</p>
+                <p class="mt-2">📱 <b>Mobile:</b> Use on-screen buttons</p>
+            </div>
+            <button id="start-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-xl text-xl shadow-[0_4px_0_rgb(37,99,235)] active:shadow-[0_0px_0_rgb(37,99,235)] active:translate-y-1 transition-all">
+                PLAY NOW
+            </button>
+        </div>
+    </div>
 
-        // 设置画板尺寸
+    <!-- UI Overlay: Game Over Screen -->
+    <div id="game-over-screen" class="ui-layer flex flex-col items-center justify-center bg-red-900/90 backdrop-blur-sm z-50 hidden">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm mx-4 interactive-btn">
+            <h1 class="text-4xl font-bold text-red-600 mb-2">CRASHED!</h1>
+            <p class="text-slate-600 mb-2 text-lg">Final Score: <span id="final-score" class="font-bold text-2xl text-slate-800">0</span></p>
+            <p class="text-red-500 font-bold mb-6">You need 70 points to pass!</p>
+            <button id="restart-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-xl text-xl shadow-[0_4px_0_rgb(22,163,74)] active:shadow-[0_0px_0_rgb(22,163,74)] active:translate-y-1 transition-all">
+                TRY AGAIN
+            </button>
+        </div>
+    </div>
+
+    <!-- UI Overlay: Success/Pass Screen -->
+    <div id="success-screen" class="ui-layer flex flex-col items-center justify-center bg-emerald-900/90 backdrop-blur-sm z-50 hidden">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm mx-4 interactive-btn transform transition hover:scale-105 duration-300">
+            <div class="text-6xl mb-2">🎉</div>
+            <h1 class="text-4xl font-bold text-emerald-600 mb-2">PASSED!</h1>
+            <p class="text-slate-600 mb-4 text-lg">Excellent! Final Score: <span id="success-score" class="font-bold text-3xl text-slate-800">0</span></p>
+            
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 text-left text-sm text-blue-700 font-medium">
+                Please submit your name and score to your teacher using the form below.
+            </div>
+
+            <!-- Google Form Link Button -->
+            <!-- 老师注意：请将 href="" 里的链接换成你真正的 Google Form 链接 -->
+            <a href="https://forms.google.com/" target="_blank" rel="noopener noreferrer" class="block w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-xl text-xl shadow-[0_4px_0_rgb(37,99,235)] active:shadow-[0_0px_0_rgb(37,99,235)] active:translate-y-1 transition-all mb-4 text-center decoration-none">
+                📝 Submit Score
+            </a>
+            
+            <button id="play-again-btn" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-8 rounded-xl text-lg transition-all">
+                Play Again
+            </button>
+        </div>
+    </div>
+
+    <!-- UI Overlay: Mobile Controls -->
+    <div id="mobile-controls" class="ui-layer flex justify-between items-end pb-8 px-8 z-40 hidden">
+        <button id="btn-left" class="interactive-btn w-20 h-20 bg-white/50 backdrop-blur active:bg-white/80 rounded-full flex items-center justify-center text-4xl shadow-lg border-2 border-white/50 select-none">
+            ⬅️
+        </button>
+        <button id="btn-right" class="interactive-btn w-20 h-20 bg-white/50 backdrop-blur active:bg-white/80 rounded-full flex items-center justify-center text-4xl shadow-lg border-2 border-white/50 select-none">
+            ➡️
+        </button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Chemistry Data Database
+        const chemistryData = [
+            { name: "Alkene", formula: "-C=C-" },
+            { name: "Alkyne", formula: "-C≡C-" },
+            { name: "Alkyl Halide", formula: "-X" },
+            { name: "Alcohol", formula: "-OH" },
+            { name: "Amine", formula: "-NH2" },
+            { name: "Ether", formula: "-O-" },
+            { name: "Carboxylic Acid", formula: "-COOH" },
+            { name: "Ketone", formula: "-CO-" },
+            { name: "Aldehyde", formula: "-CHO" },
+            { name: "Ester", formula: "-COOR" }
+        ];
+
+        // Game State Variables
+        let gameState = 'START'; // START, PLAYING, EXPLODING, GAMEOVER
+        let score = 0;
+        let lives = 3;
+        let animationId;
+        let consecutiveCorrect = 0; // 连对次数追踪
+        let bgStreaks = []; // 背景风速特效
+        let explosionTimer = 0; // 爆炸动画计时器
+        
+        // Entity Variables
+        let player = { x: 0, y: 0, width: 50, height: 50, speed: 7 };
+        let clouds = [];
+        let particles = [];
+        let currentTarget = null;
+
+        // Input Tracking
+        const keys = { left: false, right: false };
+
         function resizeCanvas() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // 初始化背景速度线
+            bgStreaks = [];
+            for(let i=0; i<40; i++) {
+                bgStreaks.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    length: 10 + Math.random() * 50,
+                    speed: 1.5 + Math.random() * 2
+                });
+            }
+
+            // Keep player near the bottom center on resize
+            if (gameState === 'START') {
+                player.x = canvas.width / 2;
+                player.y = canvas.height - 120;
+            } else {
+                player.y = canvas.height - 120;
+                // Keep inside bounds
+                if (player.x < 0) player.x = 0;
+                if (player.x > canvas.width) player.x = canvas.width;
+            }
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        let particles = [];
-        let floatTexts = []; // 用于显示 "+ H2O"
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
 
-        const TYPES = {
-            WEAK_ACID: { color: '#3b82f6', borderColor: '#1d4ed8', label: 'CH3COOH', radius: 18 }, // 蓝
-            CONJ_BASE: { color: '#10b981', borderColor: '#047857', label: 'CH3COO⁻', radius: 18 }, // 绿
-            ADDED_ACID: { color: '#ef4444', borderColor: '#b91c1c', label: 'H⁺', radius: 12 },   // 红
-            ADDED_BASE: { color: '#a855f7', borderColor: '#7e22ce', label: 'OH⁻', radius: 12 }    // 紫
-        };
+        // Keyboard controls
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') keys.left = true;
+            if (e.key === 'ArrowRight') keys.right = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') keys.left = false;
+            if (e.key === 'ArrowRight') keys.right = false;
+        });
 
-        class Particle {
-            constructor(x, y, type) {
-                this.x = x;
-                this.y = y;
-                this.type = type;
-                this.vx = (Math.random() - 0.5) * 1.5;
-                this.vy = (Math.random() - 0.5) * 1.5;
-                this.target = null;
-                this.markedForDeletion = false;
+        // Touch Controls
+        const btnLeft = document.getElementById('btn-left');
+        const btnRight = document.getElementById('btn-right');
+
+        // Left button touch events
+        btnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); keys.left = true; });
+        btnLeft.addEventListener('touchend', (e) => { e.preventDefault(); keys.left = false; });
+        btnLeft.addEventListener('mousedown', () => keys.left = true);
+        btnLeft.addEventListener('mouseup', () => keys.left = false);
+        btnLeft.addEventListener('mouseleave', () => keys.left = false);
+
+        // Right button touch events
+        btnRight.addEventListener('touchstart', (e) => { e.preventDefault(); keys.right = true; });
+        btnRight.addEventListener('touchend', (e) => { e.preventDefault(); keys.right = false; });
+        btnRight.addEventListener('mousedown', () => keys.right = true);
+        btnRight.addEventListener('mouseup', () => keys.right = false);
+        btnRight.addEventListener('mouseleave', () => keys.right = false);
+
+
+        function generateQuestion() {
+            clouds = [];
+            // Pick a random target
+            currentTarget = chemistryData[Math.floor(Math.random() * chemistryData.length)];
+            document.getElementById('target-name').innerText = currentTarget.name;
+
+            // Prepare options (1 correct, 2 incorrect)
+            let options = [currentTarget];
+            let availableWrong = chemistryData.filter(item => item.name !== currentTarget.name);
+            shuffleArray(availableWrong);
+            options.push(availableWrong[0]);
+            options.push(availableWrong[1]);
+            shuffleArray(options);
+
+            // Create clouds for options
+            const cloudSpacing = canvas.width / 4; // Divide into 4 columns, place in 3
+            options.forEach((opt, index) => {
+                
+                // 速度逻辑：基础慢速。连对 3 词及以上开始加速。
+                let currentSpeed = 0.7; 
+                if (consecutiveCorrect >= 3) {
+                    // 每次连对都会让速度增加一点点
+                    currentSpeed = 0.7 + (consecutiveCorrect - 2) * 0.3; 
+                }
+
+                clouds.push({
+                    x: cloudSpacing * (index + 1),
+                    y: -50 - Math.random() * 100, // Stagger starting heights
+                    radius: 45,
+                    formula: opt.formula,
+                    isCorrect: opt.name === currentTarget.name,
+                    speed: currentSpeed
+                });
+            });
+        }
+
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 1,
+                    color: color
+                });
+            }
+        }
+
+        function createPlayerExplosion(x, y) {
+            // 生成大量的红黄相间的粒子，模拟飞机大爆炸
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 15,
+                    life: 1.5 + Math.random(),
+                    color: Math.random() > 0.5 ? '#ef4444' : '#facc15'
+                });
+            }
+        }
+
+        function updateAndDrawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.05;
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        function drawPlayer() {
+            if (gameState === 'EXPLODING') return; // 如果正在播放死亡爆炸动画，则隐藏飞机本体
+
+            // Draw a simple airplane shape
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            
+            // Jet Body
+            ctx.fillStyle = '#f8fafc'; // White body
+            ctx.beginPath();
+            ctx.moveTo(0, -player.height/2);
+            ctx.lineTo(player.width/4, player.height/2);
+            ctx.lineTo(-player.width/4, player.height/2);
+            ctx.closePath();
+            ctx.fill();
+
+            // Wings
+            ctx.fillStyle = '#cbd5e1'; // Grey wings
+            ctx.beginPath();
+            ctx.moveTo(0, -player.height/6);
+            ctx.lineTo(player.width/1.2, player.height/3);
+            ctx.lineTo(-player.width/1.2, player.height/3);
+            ctx.closePath();
+            ctx.fill();
+
+            // Cockpit
+            ctx.fillStyle = '#38bdf8'; // Blue window
+            ctx.beginPath();
+            ctx.moveTo(0, -player.height/3);
+            ctx.arc(0, -player.height/3, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Engine flame (animate slightly)
+            if (gameState === 'PLAYING') {
+                ctx.fillStyle = Math.random() > 0.5 ? '#facc15' : '#ef4444'; // Yellow/Red flicker
+                ctx.beginPath();
+                ctx.moveTo(-player.width/8, player.height/2);
+                ctx.lineTo(player.width/8, player.height/2);
+                ctx.lineTo(0, player.height/2 + 15 + Math.random() * 10);
+                ctx.closePath();
+                ctx.fill();
             }
 
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.type.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.type.color;
-                ctx.fill();
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = this.type.borderColor;
-                ctx.stroke();
+            ctx.restore();
+        }
 
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '10px sans-serif';
+        function drawClouds() {
+            clouds.forEach(cloud => {
+                // Draw fluffy cloud shape
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.shadowColor = 'rgba(0,0,0,0.1)';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetY = 5;
+                
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, cloud.radius, 0, Math.PI * 2);
+                ctx.arc(cloud.x - cloud.radius*0.6, cloud.y + cloud.radius*0.2, cloud.radius*0.7, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.radius*0.6, cloud.y + cloud.radius*0.2, cloud.radius*0.7, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Reset shadow for text
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetY = 0;
+
+                // Draw formula text inside
+                ctx.fillStyle = '#1e293b';
+                ctx.font = 'bold 22px Inter';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                // 简单处理下标
-                let label = this.type.label;
-                if(label === 'CH3COOH') label = 'HA';
-                if(label === 'CH3COO⁻') label = 'A⁻';
-                ctx.fillText(label, this.x, this.y);
-            }
+                ctx.fillText(cloud.formula, cloud.x, cloud.y + 5);
+            });
+        }
 
-            update() {
-                // 边界碰撞反弹 (限制在液体区域，大约下方的 85%)
-                const liquidTop = canvas.height * 0.15;
-                
-                if (this.x - this.type.radius < 0) { this.x = this.type.radius; this.vx *= -1; }
-                if (this.x + this.type.radius > canvas.width) { this.x = canvas.width - this.type.radius; this.vx *= -1; }
-                if (this.y - this.type.radius < liquidTop && !this.target) { this.y = liquidTop + this.type.radius; this.vy *= -1; }
-                if (this.y + this.type.radius > canvas.height) { this.y = canvas.height - this.type.radius; this.vy *= -1; }
+        function drawBackground() {
+            // 1. 绘制丰富的天空渐变背景 (从太空到大气层)
+            let grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grd.addColorStop(0, "#0f172a"); // 顶部深空暗色
+            grd.addColorStop(0.5, "#1e3a8a"); // 中部深蓝
+            grd.addColorStop(1, "#38bdf8"); // 底部浅蓝
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // 追踪目标逻辑 (仅对外加酸碱生效)
-                if (this.target && !this.target.markedForDeletion) {
-                    const dx = this.target.x - this.x;
-                    const dy = this.target.y - this.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (dist > 5) {
-                        this.vx = (dx / dist) * 3; // 追踪速度
-                        this.vy = (dy / dist) * 3;
-                    } else {
-                        // 碰撞发生！发生反应
-                        this.markedForDeletion = true;
-                        this.target.markedForDeletion = true;
-                        
-                        // 产生新物质和漂浮的字
-                        let newType = null;
-                        if (this.type === TYPES.ADDED_ACID) newType = TYPES.WEAK_ACID;
-                        else if (this.type === TYPES.ADDED_BASE) newType = TYPES.CONJ_BASE;
+            // 随着连对增加，背景的视觉特效也会加速，增强冲刺感！
+            let streakSpeedBonus = consecutiveCorrect >= 3 ? (consecutiveCorrect - 2) * 0.6 : 0;
 
-                        if (newType) {
-                            particles.push(new Particle(this.target.x, this.target.y, newType));
-                            floatTexts.push({ x: this.x, y: this.y, text: "+ H₂O", alpha: 1.0 });
-                            updateCounts();
+            // 2. 绘制背景星星和风速线
+            bgStreaks.forEach((streak, i) => {
+                // 绘制向下移动的风速线
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                streak.y += streak.speed + streakSpeedBonus;
+                if (streak.y > canvas.height) {
+                    streak.y = -streak.length;
+                    streak.x = Math.random() * canvas.width;
+                }
+                ctx.fillRect(streak.x, streak.y, 2, streak.length);
+
+                // 绘制静止的星星点缀在上半部天空
+                if(i % 3 === 0) { 
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                    let starY = (streak.y * 0.3) % (canvas.height * 0.5);
+                    ctx.beginPath();
+                    ctx.arc(streak.x, starY, 1.2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+
+        function gameLoop() {
+            if (gameState !== 'PLAYING' && gameState !== 'EXPLODING') return;
+
+            // Clear Canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground(); // 渲染动态丰富背景
+
+            if (gameState === 'PLAYING') {
+                // Move Player
+                if (keys.left) player.x -= player.speed;
+                if (keys.right) player.x += player.speed;
+
+                // Player boundaries
+                if (player.x < player.width/2) player.x = player.width/2;
+                if (player.x > canvas.width - player.width/2) player.x = canvas.width - player.width/2;
+
+                // Update Clouds
+                let missedCorrectTarget = false;
+
+                for (let i = clouds.length - 1; i >= 0; i--) {
+                    let cloud = clouds[i];
+                    cloud.y += cloud.speed;
+
+                    // Collision Detection (Circle vs Point/Small Box)
+                    let dx = player.x - cloud.x;
+                    let dy = player.y - cloud.y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < cloud.radius + player.height/3) { // Collision occurs
+                        if (cloud.isCorrect) {
+                            // Correct Hit!
+                            score += 10;
+                            consecutiveCorrect++; // 记录连对次数
+                            document.getElementById('score-display').innerText = score;
+                            createExplosion(cloud.x, cloud.y, '#22c55e'); // Green explosion
+                            generateQuestion(); // Next question
+                            break; // Stop processing other clouds this frame
+                        } else {
+                            // Wrong Hit!
+                            lives--;
+                            consecutiveCorrect = 0; // 扣命时立刻打断连对，速度恢复最慢
+                            updateLivesDisplay();
+                            createExplosion(cloud.x, cloud.y, '#ef4444'); // Red explosion
+                            
+                            // Briefly flash screen red (achieved by drawing a red rect over everything)
+                            ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                            if (lives <= 0) {
+                                triggerGameOverExplosion();
+                                return; // Stop the loop immediately
+                            } else {
+                                generateQuestion(); // Spawn new ones to avoid hitting again
+                                break;
+                            }
                         }
+                    }
+
+                    // Cloud goes off screen
+                    if (cloud.y > canvas.height + cloud.radius) {
+                        if (cloud.isCorrect) {
+                            missedCorrectTarget = true; // Punish if missed the correct one
+                        }
+                        clouds.splice(i, 1);
                     }
                 }
 
-                this.x += this.vx;
-                this.y += this.vy;
-            }
-        }
-
-        // 初始化缓冲液粒子
-        function initBuffer() {
-            particles = [];
-            floatTexts = [];
-            for (let i = 0; i < 10; i++) {
-                spawnRandom(TYPES.WEAK_ACID);
-                spawnRandom(TYPES.CONJ_BASE);
-            }
-            updateCounts();
-            showStatus("缓冲液已就绪", false);
-        }
-
-        function spawnRandom(type) {
-            const liquidTop = canvas.height * 0.15;
-            const x = Math.random() * (canvas.width - type.radius * 2) + type.radius;
-            const y = Math.random() * (canvas.height - liquidTop - type.radius * 2) + liquidTop + type.radius;
-            particles.push(new Particle(x, y, type));
-        }
-
-        // 更新 UI 计数器
-        function updateCounts() {
-            const acidCount = particles.filter(p => p.type === TYPES.WEAK_ACID && !p.markedForDeletion).length;
-            const baseCount = particles.filter(p => p.type === TYPES.CONJ_BASE && !p.markedForDeletion).length;
-            countAcidEl.innerText = acidCount;
-            countBaseEl.innerText = baseCount;
-        }
-
-        function showStatus(text, isAlert = true) {
-            statusOverlay.innerText = text;
-            statusOverlay.style.opacity = '1';
-            statusOverlay.style.backgroundColor = isAlert ? 'rgba(220, 38, 38, 0.9)' : 'rgba(0, 0, 0, 0.7)';
-            setTimeout(() => { statusOverlay.style.opacity = '0'; }, 2000);
-        }
-
-        // 添加强酸 (H+)
-        document.getElementById('btnAddAcid').addEventListener('click', () => {
-            // 寻找一个目标共轭碱
-            const availableBases = particles.filter(p => p.type === TYPES.CONJ_BASE && !p.markedForDeletion);
-            if (availableBases.length === 0) {
-                showStatus("缓冲能力耗尽！pH 骤降！");
-                return;
-            }
-            
-            // 在顶部生成
-            const newAcid = new Particle(canvas.width / 2, 20, TYPES.ADDED_ACID);
-            // 随机锁定一个目标
-            newAcid.target = availableBases[Math.floor(Math.random() * availableBases.length)];
-            particles.push(newAcid);
-            showStatus("加入H⁺！向左移动生成弱酸", false);
-        });
-
-        // 添加强碱 (OH-)
-        document.getElementById('btnAddBase').addEventListener('click', () => {
-            // 寻找一个目标弱酸
-            const availableAcids = particles.filter(p => p.type === TYPES.WEAK_ACID && !p.markedForDeletion);
-            if (availableAcids.length === 0) {
-                showStatus("缓冲能力耗尽！pH 骤升！");
-                return;
-            }
-            
-            // 在顶部生成
-            const newBase = new Particle(canvas.width / 2, 20, TYPES.ADDED_BASE);
-            // 随机锁定一个目标
-            newBase.target = availableAcids[Math.floor(Math.random() * availableAcids.length)];
-            particles.push(newBase);
-            showStatus("加入OH⁻！向右移动生成共轭碱", false);
-        });
-
-        document.getElementById('btnReset').addEventListener('click', initBuffer);
-
-        // 主动画循环
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 更新和绘制粒子
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-
-            // 移除被标记删除的粒子
-            particles = particles.filter(p => !p.markedForDeletion);
-
-            // 绘制漂浮的文本 (如 + H2O)
-            for (let i = floatTexts.length - 1; i >= 0; i--) {
-                let ft = floatTexts[i];
-                ctx.fillStyle = `rgba(14, 165, 233, ${ft.alpha})`; // 天蓝色
-                ctx.font = 'bold 16px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(ft.text, ft.x, ft.y);
-                ft.y -= 1; // 向上漂浮
-                ft.alpha -= 0.02; // 逐渐淡出
-                if (ft.alpha <= 0) {
-                    floatTexts.splice(i, 1);
+                // If the correct target fell off screen, lose a life
+                if (missedCorrectTarget) {
+                    lives--;
+                    consecutiveCorrect = 0; // 漏掉正确答案也视为失误，速度恢复最慢
+                    updateLivesDisplay();
+                    if (lives <= 0) {
+                        triggerGameOverExplosion();
+                        return;
+                    } else {
+                        generateQuestion();
+                    }
                 }
             }
 
-            requestAnimationFrame(animate);
+            // 爆炸状态处理，等待爆炸粒子动画飞溅结束
+            if (gameState === 'EXPLODING') {
+                explosionTimer--;
+                if (explosionTimer <= 0) {
+                    showGameOverScreen();
+                    return;
+                }
+            }
+
+            // Render entities
+            if (gameState === 'PLAYING') {
+                drawClouds(); // 爆炸时不再画云朵
+            }
+            drawPlayer();
+            updateAndDrawParticles();
+
+            animationId = requestAnimationFrame(gameLoop);
         }
 
-        // 启动
-        setTimeout(() => {
-            initBuffer();
-            animate();
-        }, 100); // 延迟一点等canvas尺寸确定
+        function updateLivesDisplay() {
+            document.getElementById('lives-display').innerText = '❤️'.repeat(lives);
+        }
+
+        function startGame() {
+            gameState = 'PLAYING';
+            score = 0;
+            lives = 3;
+            consecutiveCorrect = 0; // 开局重置连对状态
+            document.getElementById('score-display').innerText = score;
+            updateLivesDisplay();
+            particles = [];
+            
+            // Reset player position
+            player.x = canvas.width / 2;
+            
+            // UI visibility
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.getElementById('success-screen').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            
+            // Show mobile controls on mobile devices
+            if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+                document.getElementById('mobile-controls').classList.remove('hidden');
+            }
+
+            generateQuestion();
+            
+            // Start Loop
+            if (animationId) cancelAnimationFrame(animationId);
+            gameLoop();
+        }
+
+        function triggerGameOverExplosion() {
+            gameState = 'EXPLODING';
+            explosionTimer = 60; // 设置 60 帧（约 1 秒）的爆炸延迟时间
+            createPlayerExplosion(player.x, player.y);
+            // 让 Canvas 继续循环一秒钟来渲染爆炸的粒子效果
+            requestAnimationFrame(gameLoop); 
+        }
+
+        function showGameOverScreen() {
+            gameState = 'GAMEOVER';
+            cancelAnimationFrame(animationId);
+            
+            // Update UI
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('mobile-controls').classList.add('hidden');
+            
+            // Check if passed (Score >= 70)
+            if (score >= 70) {
+                document.getElementById('success-screen').classList.remove('hidden');
+                document.getElementById('success-score').innerText = score;
+            } else {
+                document.getElementById('game-over-screen').classList.remove('hidden');
+                document.getElementById('final-score').innerText = score;
+            }
+        }
+
+        // Event Listeners for UI Buttons
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+        document.getElementById('play-again-btn').addEventListener('click', () => {
+            document.getElementById('success-screen').classList.add('hidden');
+            startGame();
+        });
+
+        // Initial render to draw the background and player before starting
+        function initRender() {
+            if(gameState === 'START') {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawBackground(); // 在开始界面也展示丰富动态背景
+                drawPlayer();
+                requestAnimationFrame(initRender);
+            }
+        }
+        initRender();
+
     </script>
 </body>
 </html>
